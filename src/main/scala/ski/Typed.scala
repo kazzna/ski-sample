@@ -1,0 +1,3 @@
+package ski
+
+trait Typed
