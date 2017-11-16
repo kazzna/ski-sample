@@ -1,12 +1,28 @@
 package ski.raw
 
-import ski.typed.{Block, Lambda, SimpleTyped, Variable}
+import ski.raw.typed.{Lambda, SimpleTyped, Variable}
 
 /**
   * 入力データ
   */
 sealed trait Input {
-  def toSimpleTyped = SimpleTyped(this)
+  self =>
+  /**
+    * 型付情報への変換
+    */
+  def toTyped: SimpleTyped = self match {
+    case Simple(a) => Variable(a)
+    case Group(last :: Nil) => last.toTyped
+    case Group(BackSlash :: tail) => {
+      val p = tail.takeWhile(_ != Dot).map(_.asInstanceOf[Simple])
+      val v = tail.dropWhile(_ != Dot).tail
+      Lambda(p.map(s => Variable(s.value)), Group(v).toTyped)
+    }
+    case Group(vs) => SimpleTyped.block(vs.map(v => v.toTyped): _*)
+    case _ =>
+      println(self)
+      sys.error("Not Implemented.")
+  }
 }
 
 /**

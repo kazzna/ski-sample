@@ -1,6 +1,7 @@
 package ski
 
-import ski.typed.{Block, Lambda, SimpleTyped, Variable}
+import ski.raw.typed
+import ski.raw.typed.{Block, Lambda, SimpleTyped, Variable}
 
 /**
   * 変換処理中間状態
@@ -11,7 +12,7 @@ object Tau {
   def apply(st: SimpleTyped): Tau = st match {
     case a: Variable => VariableTau(a)
     case b: Block => BlockTau(b)
-    case l: Lambda => RawLambdaTau(l.ps, l.b).toLambdaTau
+    case l: Lambda => RawLambdaTau(l.ps, l.body).toLambdaTau
   }
 
   def apply(ski: SKI): Tau = ski match {
@@ -82,7 +83,7 @@ case class RawLambdaTau(params: List[Variable], body: SimpleTyped) {
 }
 
 case class SimpleLambdaTau(p: Variable, b: Variable) extends LambdaTau {
-  override def toString: String = s"T[λ$p.($b)]"
+  override def toString: String = s"T[λ$p.$b]"
 
   override def convert: Convertible = if (p == b) I else K(Some(b.toTau))
 }
@@ -127,7 +128,7 @@ case class CurriedLambdaTau(param: Variable, body: Convertible) extends LambdaTa
 case class UncurriedRawLambdaTau(init: List[Variable], last: Variable, body: SimpleTyped) extends LambdaTau {
   override def toString: String = s"T[λ${init.map(_.toString).mkString}$last.$body]"
 
-  private def newBody: Lambda = Lambda(List(last), body)
+  private def newBody: Lambda = typed.Lambda(List(last), body)
 
   override def convert: Convertible =
     if (init.length == 1) CurriedRawLambdaTau(init.head, newBody)
